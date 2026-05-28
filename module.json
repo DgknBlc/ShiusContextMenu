@@ -7,7 +7,7 @@
     "verified": "14"
   },
   "esmodules": [
-	  "scripts/context-menu.js"
+    "scripts/main.js"
   ],
   "styles": [
     "css/module.css"

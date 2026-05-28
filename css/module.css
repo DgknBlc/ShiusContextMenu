@@ -6,7 +6,7 @@
     padding: 4px;
     z-index: 100000;
     box-shadow: 0 0 10px rgba(0,0,0,0.8);
-    min-width: 160px;
+    min-width: 40px;
 }
 
 .shius-context-menu-button {
