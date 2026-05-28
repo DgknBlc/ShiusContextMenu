@@ -6,6 +6,12 @@
     "minimum": "14",
     "verified": "14"
   },
+  "esmodules": [
+	  "scripts/context-menu.js"
+  ],
+  "styles": [
+    "css/module.css"
+  ],
   "description": "<p>Adding Context Menu</p>",
   "authors": [
     {
