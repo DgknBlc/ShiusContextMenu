@@ -130,7 +130,7 @@ const initializeContextMenuForEmptySpace = (menu, event) => {
     menu.appendChild(emptySpaceBtn);
 };
 
-const onCanvasClick = (event) => {
+const _contextMenu = (event) => {
 
     if (isInvalidClick(event)) return;
 
@@ -140,5 +140,5 @@ const onCanvasClick = (event) => {
 console.log("ShiusContextMenu | Module Loaded.");
 
 Hooks.once("canvasReady", () => {
-    canvas.stage.on('pointerdown', onCanvasClick);
+    canvas.stage.on('pointerdown', _contextMenu);
 });
