@@ -1,0 +1,22 @@
+{
+  "id": "shius-context-menu",
+  "title": "Shius' Context Menu",
+  "version": "0.0.1",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "description": "<p>Adding Context Menu</p>",
+  "authors": [
+    {
+      "name": "Shius",
+      "email": "dbalci.dev@gmail.com",
+      "discord": "shius9",
+      "flags": {}
+    }
+  ],
+  "flags": {
+    "canUpload": true
+  },
+  "action": "manageModule"
+}
