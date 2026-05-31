@@ -15,6 +15,11 @@ const cleanupExistingMenu = () => {
 };
 
 const isInvalidClick = (event) => {
+
+    if (!canvas.tokens.active) {
+        return true; 
+    }
+    
     return event.nativeEvent.button !== 1 || event.metaKey;
 }
 
