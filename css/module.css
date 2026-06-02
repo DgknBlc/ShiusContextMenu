@@ -1,3 +1,8 @@
+:root {
+    --scm-button-hover-bg: rgba(255, 255, 255, 0.1);
+    --scm-button-bg: transparent;
+}
+
 .shius-context-menu {
     background-color: rgba(30, 30, 30, 0.95);
     color: #f0f0e0;
@@ -14,9 +19,10 @@
     cursor: pointer;
     border-radius: 3px;
     transition: background 0.2s;
-    background-color: transparent;
+    background-color: var(--scm-button-bg);
 }
 
 .shius-context-menu-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--scm-button-hover-bg);
 }
+
