@@ -2,6 +2,9 @@
   "id": "shius-context-menu",
   "title": "Shius' Context Menu",
   "version": "0.0.2",
+  "url": "https://github.com/DgknBlc/ShiusContextMenu",
+	"manifest": "https://github.com/DgknBlc/ShiusContextMenu/releases/latest/download/module.json",
+	"download": "https://github.com/DgknBlc/ShiusContextMenu/releases/download/v0.0.2-alpha/module.zip",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
