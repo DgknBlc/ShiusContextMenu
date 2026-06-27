@@ -11,10 +11,13 @@
     padding: 4px;
     z-index: 100000;
     box-shadow: 0 0 10px rgba(0,0,0,0.8);
-    min-width: 40px;
+    min-width: 150px;
+    width: max-content;
+    max-width: 150px;
 }
 
 .shius-context-menu-button {
+    display: flex;
     padding: 6px 10px;
     cursor: pointer;
     border-radius: 3px;
@@ -24,5 +27,15 @@
 
 .shius-context-menu-button:hover {
     background-color: var(--scm-button-hover-bg);
+}
+
+.shius-context-menu-button-label {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.shius-context-menu-button:hover .shius-context-menu-button-label {
+    transform: translateX(calc(5px));
 }
 

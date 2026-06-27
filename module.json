@@ -1,7 +1,7 @@
 {
   "id": "shius-context-menu",
   "title": "Shius' Context Menu",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
