@@ -49,13 +49,13 @@ export class SCM {
                 break;
             }
 
-            if (currentObj.document && currentObj.document.documentName && currentObj.constructor.name == 'Token5e') {
+            if (currentObj.document && currentObj.document.documentName && currentObj.constructor.name.includes('Token') ) {
                 foundObject = currentObj;
                 foundType = ObjectType.Token;
                 break;
             }
 
-            if (currentObj.document && currentObj.document.documentName && currentObj.constructor.name == 'Note5e') {
+            if (currentObj.document && currentObj.document.documentName && currentObj.constructor.name.includes('Note') ) {
                 foundObject = currentObj;
                 foundType = ObjectType.Note;
                 break;
@@ -69,6 +69,7 @@ export class SCM {
 
             currentObj = currentObj.parent;
         }
+        
         return { object: foundObject, type: foundType };
     }
 
