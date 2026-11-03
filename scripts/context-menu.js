@@ -467,6 +467,168 @@ export class SCM {
             ]
         },
         {
+            label: "Set Light",
+            type: ButtonType.onClick,
+            contexts: [ObjectType.Token],
+            condition: (action) => SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0,
+            callback: (e) => {
+
+                let targetObject = SCM.getMenu().targetObject;
+
+                console.log(targetObject.document.light);
+
+                const _dimVal = targetObject.document.light.dim ?? 60 ;
+                const _brightVal = targetObject.document.light.bright ?? 30;
+                const _angleVal = targetObject.document.light.angle ?? 360;
+                const _colorVal = targetObject.document.light.color ?? '#ffaa00';
+                const _alphaVal = targetObject.document.light.alpha ?? 0.4;
+
+
+                const dialogContent = `
+                    <form style="margin-bottom: 10px;">
+                        <div class="form-group">
+                            <label>Dim Light:</label>
+                            <div class="form-fields">
+                                <input type="number" id="light-dim" value="${_dimVal}" autofocus>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Bright Light:</label>
+                            <div class="form-fields">
+                                <input type="number" id="light-bright" value="${_brightVal}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Angle:</label>
+                            <div class="form-fields">
+                                <input type="number" id="light-angle" value="${_angleVal}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Color:</label>
+                            <div class="form-fields">
+                                <input type="color" id="light-color" value="${_colorVal}" style="height: 30px;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Opacity (Alpha):</label>
+                            <div class="form-fields">
+                                <input type="range" id="light-alpha" value="${_alphaVal}" min="0" max="1" step="0.05">
+                            </div>
+                        </div>
+                    </form>
+                `;
+            
+                new Dialog({
+                    title: `${targetObject.document.name} - Light Setting`,
+                    content: dialogContent,
+                    buttons: {
+
+                        apply: {
+                            icon: '<i class="fas fa-check"></i>',
+                            label: "Apply",
+                            callback: async (html) => {
+
+                                const dimVal = Number(html.find('#light-dim').val());
+                                const brightVal = Number(html.find('#light-bright').val());
+                                const angleVal = Number(html.find('#light-angle').val());;
+                                const colorVal = html.find('#light-color').val();
+                                const alphaVal = Number(html.find('#light-alpha').val());
+                            
+
+                                await targetObject.document.update({
+                                    light: {
+                                        active: true,
+                                        dim: dimVal,
+                                        bright: brightVal,
+                                        color: colorVal,
+                                        alpha: alphaVal,
+                                        angle: angleVal > 360 ? 360 : angleVal,
+                                        animation: { type: "torch", speed: 3, intensity: 3 } 
+                                    }
+                                });
+
+                                for (const controlled of canvas.tokens.controlled) {
+                                    await controlled.document.update({
+                                        light: {
+                                            active: true,
+                                            dim: dimVal,
+                                            bright: brightVal,
+                                            color: colorVal,
+                                            alpha: alphaVal,
+                                            angle: angleVal > 360 ? 360 : angleVal,
+                                            animation: { type: "torch", speed: 3, intensity: 3 } 
+                                        }
+                                    });
+                                }
+                            }
+                        },
+                        cancel: {
+                            icon: '<i class="fas fa-times"></i>',
+                            label: "Cancel"
+                        }
+                    },
+                    default: "apply"
+                }).render(true);
+            }
+        },
+        {
+            label: "Light Off",
+            type: ButtonType.onClick,
+            contexts: [ObjectType.Token],
+            condition: (action) => {
+                let isControlledLight = false;
+                for (const controlled of canvas.tokens.controlled) {
+                    isControlledLight = controlled.document.light.dim > 0;
+                    if (isControlledLight) {
+                        break;
+                    }
+                }
+                return SCM.getMenu().targetObject.document.light.dim > 0 || isControlledLight
+            },
+            callback: async (e) => {
+                let targetObject = SCM.getMenu().targetObject;
+
+                const _angleVal = targetObject.document.light.angle ?? 360;
+                const _colorVal = targetObject.document.light.color ?? '#ffaa00';
+                const _alphaVal = targetObject.document.light.alpha ?? 0.4;
+
+                for (const controlled of canvas.tokens.controlled) {
+                    await controlled.document.update({
+                        light: {
+                            active: true,
+                            dim: 0,
+                            bright: 0,
+                            angle: _angleVal,
+                            color: _colorVal,
+                            alpha: _alphaVal,
+                            animation: {
+                                type: "torch",
+                                speed: 3,
+                                intensity: 3
+                            }
+                        } 
+                    });
+                }
+
+                await targetObject.document.update({
+                    light: {
+                        active: true,
+                        dim: 0,
+                        bright: 0,
+                        angle: _angleVal,
+                        color: _colorVal,
+                        alpha: _alphaVal,
+                        animation: {
+                            type: "torch",
+                            speed: 3,
+                            intensity: 3
+                        }
+                    } 
+                });
+            }
+        },
+        {
             label: "GM Menu",
             type: ButtonType.subMenu,
             contexts: null,
@@ -484,155 +646,6 @@ export class SCM {
                         let flag = SCM.getMenu().settings.debugMode;
                         game.settings.set("shius-context-menu", "debugMode", !flag);
 
-                    }
-                },
-                {
-                    label: "Set Light",
-                    type: ButtonType.onClick,
-                    contexts: [ObjectType.Token],
-                    condition: (action) => SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0,
-                    callback: (e) => {
-
-                        let targetObject = SCM.getMenu().targetObject;
-
-                        const dialogContent = `
-                            <form style="margin-bottom: 10px;">
-                                <div class="form-group">
-                                    <label>Dim Light:</label>
-                                    <div class="form-fields">
-                                        <input type="number" id="light-dim" value="60" autofocus>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Bright Light:</label>
-                                    <div class="form-fields">
-                                        <input type="number" id="light-bright" value="30">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Angle:</label>
-                                    <div class="form-fields">
-                                        <input type="number" id="light-angle" value="360">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Color:</label>
-                                    <div class="form-fields">
-                                        <input type="color" id="light-color" value="#ffaa00" style="height: 30px;">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Opacity (Alpha):</label>
-                                    <div class="form-fields">
-                                        <input type="range" id="light-alpha" value="0.4" min="0" max="1" step="0.05">
-                                    </div>
-                                </div>
-                            </form>
-                        `;
-                    
-                        new Dialog({
-                            title: `${targetObject.document.name} - Light Setting`,
-                            content: dialogContent,
-                            buttons: {
-
-                                apply: {
-                                    icon: '<i class="fas fa-check"></i>',
-                                    label: "Apply",
-                                    callback: async (html) => {
-
-                                        const dimVal = Number(html.find('#light-dim').val());
-                                        const brightVal = Number(html.find('#light-bright').val());
-                                        const angleVal = Number(html.find('#light-angle').val());;
-                                        const colorVal = html.find('#light-color').val();
-                                        const alphaVal = Number(html.find('#light-alpha').val());
-                                    
-
-                                        await targetObject.document.update({
-                                            light: {
-                                                active: true,
-                                                dim: dimVal,
-                                                bright: brightVal,
-                                                color: colorVal,
-                                                alpha: alphaVal,
-                                                angle: angleVal > 360 ? 360 : angleVal,
-                                                animation: { type: "torch", speed: 3, intensity: 3 } 
-                                            }
-                                        });
-
-                                        for (const controlled of canvas.tokens.controlled) {
-                                            await controlled.document.update({
-                                                light: {
-                                                    active: true,
-                                                    dim: dimVal,
-                                                    bright: brightVal,
-                                                    color: colorVal,
-                                                    alpha: alphaVal,
-                                                    angle: angleVal > 360 ? 360 : angleVal,
-                                                    animation: { type: "torch", speed: 3, intensity: 3 } 
-                                                }
-                                            });
-                                        }
-                                    }
-                                },
-                                cancel: {
-                                    icon: '<i class="fas fa-times"></i>',
-                                    label: "Cancel"
-                                }
-                            },
-                            default: "apply"
-                        }).render(true);
-                    }
-                },
-                {
-                    label: "Light Off",
-                    type: ButtonType.onClick,
-                    contexts: [ObjectType.Token],
-                    condition: (action) => {
-                        let isControlledLight = false;
-                        for (const controlled of canvas.tokens.controlled) {
-                            isControlledLight = controlled.document.light.dim > 0;
-                            if (isControlledLight) {
-                                break;
-                            }
-                        }
-                        return SCM.getMenu().targetObject.document.light.dim > 0 || isControlledLight
-                    },
-                    callback: async (e) => {
-                        let targetObject = SCM.getMenu().targetObject;
-
-                        for (const controlled of canvas.tokens.controlled) {
-                            await controlled.document.update({
-                                light: {
-                                    active: true,
-                                    dim: 0,
-                                    bright: 0,
-                                    angle: 360,
-                                    color: "#ffffff",
-                                    alpha: 0,
-                                    animation: {
-                                        type: "torch",
-                                        speed: 3,
-                                        intensity: 3
-                                    }
-                                } 
-                            });
-                        }
-
-                        await targetObject.document.update({
-                            light: {
-                                active: true,
-                                dim: 0,
-                                bright: 0,
-                                angle: 360,
-                                color: "#ffffff",
-                                alpha: 0,
-                                animation: {
-                                    type: "torch",
-                                    speed: 3,
-                                    intensity: 3
-                                }
-                            } 
-                        });
                     }
                 }
             ]
