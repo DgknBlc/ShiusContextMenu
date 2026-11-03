@@ -28,7 +28,16 @@ export class SCM {
         this.contextType = hoveredObject.type || ObjectType.Empty;
         this.menu = this.createMenu(this.originX, this.originY);
         this.controlledToken = canvas.tokens.controlled[0];
-        this.debugMode = game.settings.get("shius-context-menu", "debugMode");
+
+        const moduleName = "shius-context-menu";
+        const allSettings = {};
+        for (let [key, setting] of game.settings.settings.entries()) {
+            if (setting.namespace === moduleName) {
+                allSettings[setting.key] = game.settings.get(moduleName, setting.key);
+            }
+        }
+
+        this.settings = allSettings;
         SCM.menu = this;
         console.log("SCM | Context Type:", this);
     }
@@ -350,22 +359,32 @@ export class SCM {
         {
             label: "Target",
             type: ButtonType.onClick,
-            contexts: [ObjectType.Token],
+            contexts: [ObjectType.Token, ObjectType.Empty],
             condition: (action) => {
                 action.label = SCM.getMenu().targetObject?.isTargeted ? "Untarget" : "Target";
-                return SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0
+                return SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0;
             },
             callback: (e) => {
-                let targetObject = SCM.getMenu().targetObject;
-                let isTargeted = targetObject.isTargeted;
                 
-                let selectedObjects = canvas.tokens.controlled;
+                let contextMenu = SCM.getMenu();
 
-                for (let selObj of selectedObjects) {
-                    selObj.setTarget(!isTargeted, { releaseOthers: false });
+                if (contextMenu.contextType === ObjectType.Empty) {
+                    
+                    let selectedObjects = canvas.tokens.controlled;
+
+                    selectedObjects[0].setTarget(true, { releaseOthers: true });
+                    for (let selObj of selectedObjects) {
+                        selObj.setTarget(true, { releaseOthers: false });
+                    }
+                    
+                } else if (contextMenu.contextType === ObjectType.Token) {
+
+                    let targetObject = SCM.getMenu().targetObject;
+                    let isTargeted = targetObject.isTargeted;
+
+                    targetObject.setTarget(!isTargeted, { releaseOthers: false });
                 }
 
-                targetObject.setTarget(!isTargeted, { releaseOthers: false });
             }
         },
         {
@@ -394,11 +413,23 @@ export class SCM {
                     condition: (action) => SCM.getMenu().targetObject.actor?.img,
                     callback: (e) => {
                         let targetObject = SCM.getMenu().targetObject;
+                        const uuid = targetObject.document.uuid;
+                        const name = targetObject.document.name || "İsimsiz Obje";
+
+                        const gridSize = canvas.dimensions.size
+                        const canvasPos = {x: targetObject.x + (targetObject.document.width * gridSize / 2), y: targetObject.y + (targetObject.document.height * gridSize / 2)};
+                        canvas.ping(canvasPos, {style : "CustomPing", duration :  1 * 1000, Image : "icons/pings/chevron.webp" , ImageColor : game.user.color})
+
+                        if (SCM.getMenu().settings.viewChatMessage) {ChatMessage.create({
+                            user: game.user._id,
+                            blind: true,
+                            content: "User Viewed Portrait of @UUID[" + uuid + "]{" + name + "}"
+                        });}
 
                         const popout = new ImagePopout(targetObject.actor.img, {
-                            title: targetObject.document.name,
+                            title: name,
                             shareable: game.user.isGM,
-                            uuid: targetObject.document.uuid
+                            uuid: uuid
                         });
                     
                         popout.render(true);
@@ -411,11 +442,23 @@ export class SCM {
                     condition: (action) => SCM.getMenu().targetObject.document?.texture?.src,
                     callback: (e) => {
                         let targetObject = SCM.getMenu().targetObject;
+                        const uuid = targetObject.document.uuid;
+                        const name = targetObject.document.name || "İsimsiz Obje";
+
+                        const gridSize = canvas.dimensions.size
+                        const canvasPos = {x: targetObject.x + (targetObject.document.width * gridSize / 2), y: targetObject.y + (targetObject.document.height * gridSize / 2)};
+                        canvas.ping(canvasPos, {style : "CustomPing", duration :  1 * 1000, Image : "icons/pings/chevron.webp" , ImageColor : game.user.color})
+
+                        if (SCM.getMenu().settings.viewChatMessage) {ChatMessage.create({
+                            user: game.user._id,
+                            blind: true,
+                            content: "User Viewed Image of @UUID[" + uuid + "]{" + name + "}"
+                        });}
 
                         const popout = new ImagePopout(targetObject.document.texture.src, {
-                            title: targetObject.document.name,
+                            title: name,
                             shareable: game.user.isGM,
-                            uuid: targetObject.document.uuid
+                            uuid: uuid
                         });
                     
                         popout.render(true);
@@ -434,11 +477,11 @@ export class SCM {
                     type: ButtonType.onClick,
                     contexts: false,
                     condition: (action) => {
-                        action.label = game.settings.get("shius-context-menu", "debugMode") ? "Debug Off" : "Debug On";
+                        action.label = SCM.getMenu().settings.debugMode ? "Debug Off" : "Debug On";
                         return false;
                     },
                     callback: (e) => {
-                        let flag = game.settings.get("shius-context-menu", "debugMode");
+                        let flag = SCM.getMenu().settings.debugMode;
                         game.settings.set("shius-context-menu", "debugMode", !flag);
 
                     }
@@ -598,7 +641,7 @@ export class SCM {
             label: "Debug Menu", 
             type: ButtonType.function,
             contexts: false,
-            condition: (action) => SCM.getMenu().debugMode,
+            condition: (action) => SCM.getMenu().settings.debugMode,
             callback: () => {
                 let contextMenu = SCM.getMenu();
                 let subMenu = contextMenu.createSubMenu("Debug Menu");

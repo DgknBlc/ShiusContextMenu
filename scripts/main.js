@@ -21,6 +21,15 @@ Hooks.once('init', async function () {
         default: false,
     });
 
+        game.settings.register("shius-context-menu","viewChatMessage", {
+        name: "Send Chat Message When View Image/Token",
+        hint: "See Who is Looking",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false,
+    });
+
     Hooks.on("canvasReady", () => {
         console.log("ShiusContextMenu | Listening for contextmenu events");
 
