@@ -46,6 +46,19 @@ export class SCM {
         return this.menu;
     }
 
+    static getAllLayers() {
+        return [
+            { name: "Tokens", layer: canvas.tokens, isPlayerLayer: true},
+            { name: "Tiles", layer: canvas.tiles, isPlayerLayer: false },
+            { name: "Drawings", layer: canvas.drawings, isPlayerLayer: false },
+            { name: "Walls", layer: canvas.walls, isPlayerLayer: false },
+            { name: "Lighting", layer: canvas.lighting, isPlayerLayer: false },
+            { name: "Sounds", layer: canvas.sounds, isPlayerLayer: false },
+            { name: "Regions", layer: canvas.regions, isPlayerLayer: true },
+            { name: "Notes", layer: canvas.notes, isPlayerLayer: true },
+        ];
+    }
+
     getHoveredObject(obj){
         let currentObj = obj;
         let foundObject = null;
@@ -477,8 +490,8 @@ export class SCM {
 
                 console.log(targetObject.document.light);
 
-                const _dimVal = targetObject.document.light.dim ?? 60 ;
-                const _brightVal = targetObject.document.light.bright ?? 30;
+                const _dimVal = targetObject.document.light.dim == 0 ? 60 : targetObject.document.light.dim;
+                const _brightVal = targetObject.document.light.bright == 0 ? 30 : targetObject.document.light.bright;
                 const _angleVal = targetObject.document.light.angle ?? 360;
                 const _colorVal = targetObject.document.light.color ?? '#ffaa00';
                 const _alphaVal = targetObject.document.light.alpha ?? 0.4;
@@ -629,33 +642,80 @@ export class SCM {
             }
         },
         {
-            label: "GM Menu",
-            type: ButtonType.subMenu,
-            contexts: null,
-            condition: (action) => game.user.isGM,
-            children: [
-                {
-                    label: "Debug",
-                    type: ButtonType.onClick,
-                    contexts: false,
-                    condition: (action) => {
-                        action.label = SCM.getMenu().settings.debugMode ? "Debug Off" : "Debug On";
-                        return false;
-                    },
-                    callback: (e) => {
-                        let flag = SCM.getMenu().settings.debugMode;
-                        game.settings.set("shius-context-menu", "debugMode", !flag);
+            label: "Level",
+            type: ButtonType.function,
+            contexts: [ObjectType.Token, ObjectType.Empty],
+            condition: (action) => game.user.isGM && canvas.scene.levels.size > 1,
+            callback: (e) => {
+                let contextMenu = SCM.getMenu();
+                let isOpenLevel = (contextMenu.contextType === ObjectType.Empty && !(SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0));
 
+                let subMenu = contextMenu.createSubMenu(isOpenLevel ? "Open Level":"Switch Level");
+
+                let targetObject = contextMenu.targetObject;
+
+                for (let level of canvas.scene.levels) {
+                    if (isOpenLevel) {
+                        contextMenu.createMenuButton(level.name, ButtonType.onClick, async () => {
+                                await canvas.scene.view({ level: level.id });
+                                contextMenu.removeMenu();
+                            }, subMenu);
+
+                    } else {
+                        if (level !== canvas.level) {
+                            
+                            contextMenu.createMenuButton("-> " + level.name, ButtonType.onClick, async () => {
+                                
+                                targetObject?.document.update({
+                                    level: level.id,
+                                    elevation : level.elevation?.bottom
+                                    },
+                                    { teleport: true, animate: false, diff: false }
+                                );
+
+                                for(let token of canvas.tokens.controlled) {
+                                    token.document.update({
+                                        level: level.id,
+                                        elevation : level.elevation?.bottom
+                                        },
+                                        { teleport: true, animate: false, diff: false }
+                                    );
+                                }
+
+                                await canvas.scene.view({ level: level.id });
+                                contextMenu.removeMenu();
+                            }, subMenu);
+                        }
                     }
                 }
-            ]
+            }
+        },
+        {
+            label: "Layer",
+            type: ButtonType.function,
+            contexts: [ObjectType.Empty],
+            condition: (action) => true,
+            callback: (e) => {
+                let contextMenu = SCM.getMenu();
+                let subMenu = contextMenu.createSubMenu("Layers");
+
+                for (let layer of SCM.getAllLayers()) {
+                    
+                    if (layer.layer !== canvas.activeLayer && (game.user.isGM || layer.isPlayerLayer)) {
+                        contextMenu.createMenuButton(layer.name, ButtonType.onClick, () => {
+                            layer.layer.activate();
+                            contextMenu.removeMenu();
+                        }, subMenu);
+                    }
+                }
+            }
         },
         {
             label: "Debug Menu", 
             type: ButtonType.function,
             contexts: false,
             condition: (action) => SCM.getMenu().settings.debugMode,
-            callback: () => {
+            callback: (e) => {
                 let contextMenu = SCM.getMenu();
                 let subMenu = contextMenu.createSubMenu("Debug Menu");
                 contextMenu.testMenu(subMenu)
