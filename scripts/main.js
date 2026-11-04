@@ -21,13 +21,31 @@ Hooks.once('init', async function () {
         default: false,
     });
 
-        game.settings.register("shius-context-menu","viewChatMessage", {
+    game.settings.register("shius-context-menu","viewChatMessage", {
         name: "Send Chat Message When View Image/Token",
         hint: "See Who is Looking",
         scope: "world",
         config: true,
         type: Boolean,
         default: false,
+    });
+
+    game.settings.register("shius-context-menu","mapScene", {
+        name: "Map Scene",
+        hint: "Set Scene Name or ID(After @Scene.). To disable this option, leave empty",
+        scope: "world",
+        config: true,
+        type: String,
+        default: "",
+    });
+
+    game.settings.register("shius-context-menu","landingScene", {
+        name: "Landing Scene",
+        hint: "Set Scene Name or ID(After @Scene.). To disable this option, leave empty",
+        scope: "world",
+        config: true,
+        type: String,
+        default: "",
     });
 
     Hooks.on("canvasReady", () => {

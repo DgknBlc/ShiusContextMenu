@@ -49,13 +49,13 @@ export class SCM {
     static getAllLayers() {
         return [
             { name: "Tokens", layer: canvas.tokens, isPlayerLayer: true},
-            { name: "Tiles", layer: canvas.tiles, isPlayerLayer: false },
-            { name: "Drawings", layer: canvas.drawings, isPlayerLayer: false },
+            { name: "Tiles", layer: canvas.tiles, isPlayerLayer: game.user.can("TILE_CREATE")},
+            { name: "Drawings", layer: canvas.drawings, isPlayerLayer: game.user.can("DRAWING_CREATE")},
             { name: "Walls", layer: canvas.walls, isPlayerLayer: false },
             { name: "Lighting", layer: canvas.lighting, isPlayerLayer: false },
             { name: "Sounds", layer: canvas.sounds, isPlayerLayer: false },
             { name: "Regions", layer: canvas.regions, isPlayerLayer: true },
-            { name: "Notes", layer: canvas.notes, isPlayerLayer: true },
+            { name: "Notes", layer: canvas.notes, isPlayerLayer: game.user.can("JOURNAL_CREATE")},
         ];
     }
 
@@ -434,7 +434,8 @@ export class SCM {
                         canvas.ping(canvasPos, {style : "CustomPing", duration :  1 * 1000, Image : "icons/pings/chevron.webp" , ImageColor : game.user.color})
 
                         if (SCM.getMenu().settings.viewChatMessage) {ChatMessage.create({
-                            user: game.user._id,
+                            speaker: ChatMessage.getSpeaker({ token: canvas.tokens.controlled.document, actor: canvas.tokens.controlled.actor }),
+                            whisper: ChatMessage.getWhisperRecipients("GM").map(u => u.id),
                             blind: true,
                             content: "User Viewed Portrait of @UUID[" + uuid + "]{" + name + "}"
                         });}
@@ -463,7 +464,8 @@ export class SCM {
                         canvas.ping(canvasPos, {style : "CustomPing", duration :  1 * 1000, Image : "icons/pings/chevron.webp" , ImageColor : game.user.color})
 
                         if (SCM.getMenu().settings.viewChatMessage) {ChatMessage.create({
-                            user: game.user._id,
+                            speaker: ChatMessage.getSpeaker({ token: canvas.tokens.controlled.document, actor: canvas.tokens.controlled.actor }),
+                            whisper: ChatMessage.getWhisperRecipients("GM").map(u => u.id),
                             blind: true,
                             content: "User Viewed Image of @UUID[" + uuid + "]{" + name + "}"
                         });}
@@ -483,7 +485,7 @@ export class SCM {
             label: "Set Light",
             type: ButtonType.onClick,
             contexts: [ObjectType.Token],
-            condition: (action) => SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0,
+            condition: (action) => game.user.isGM && (SCM.getMenu().targetObject || canvas.tokens.controlled.length > 0),
             callback: (e) => {
 
                 let targetObject = SCM.getMenu().targetObject;
@@ -597,7 +599,7 @@ export class SCM {
                         break;
                     }
                 }
-                return SCM.getMenu().targetObject.document.light.dim > 0 || isControlledLight
+                return game.user.isGM && (SCM.getMenu().targetObject.document.light.dim > 0 || isControlledLight);
             },
             callback: async (e) => {
                 let targetObject = SCM.getMenu().targetObject;
@@ -700,12 +702,19 @@ export class SCM {
                 let subMenu = contextMenu.createSubMenu("Layers");
 
                 for (let layer of SCM.getAllLayers()) {
-                    
-                    if (layer.layer !== canvas.activeLayer && (game.user.isGM || layer.isPlayerLayer)) {
-                        contextMenu.createMenuButton(layer.name, ButtonType.onClick, () => {
-                            layer.layer.activate();
-                            contextMenu.removeMenu();
-                        }, subMenu);
+                    if (game.user.isGM || layer.isPlayerLayer) {
+
+                        if (layer.layer !== canvas.activeLayer ) {
+                            contextMenu.createMenuButton(layer.name, ButtonType.onClick, () => {
+                                layer.layer.activate();
+                                contextMenu.removeMenu();
+                            }, subMenu);
+                        } else {
+                            contextMenu.createMenuButton( "-> " + layer.name, ButtonType.onHover, () => {
+                            }, subMenu);
+                        }
+
+                        
                     }
                 }
             }
@@ -720,6 +729,73 @@ export class SCM {
                 let subMenu = contextMenu.createSubMenu("Debug Menu");
                 contextMenu.testMenu(subMenu)
             }
-        }        
+        },
+        {
+            label: "Go To Active Scene",
+            type: ButtonType.onClick,
+            contexts: [ObjectType.Empty],
+            condition: (action) => {
+                return canvas.scene.id !== game.scenes.active.id;
+            },
+            callback: (e) => {
+                game.scenes.active.view();
+            }
+        },
+        {
+            label: "Back To Map",
+            type: ButtonType.onClick,
+            contexts: [ObjectType.Empty],
+            condition: (action) => {
+                const sceneNameOrId = SCM.getMenu().settings.mapScene;
+                if (!sceneNameOrId || sceneNameOrId.trim() === "") {
+                    return false;
+                }
+
+                const targetScene = game.scenes.get(sceneNameOrId) ?? game.scenes.getName(sceneNameOrId);
+
+                return canvas.scene.id !== targetScene?.id;
+            },
+            callback: (e) => {            
+
+                const sceneNameOrId = SCM.getMenu().settings.mapScene;
+                const targetScene = game.scenes.get(sceneNameOrId) 
+                                 ?? game.scenes.getName(sceneNameOrId);
+
+                if (targetScene) {
+                    targetScene.view();
+                    ui.notifications.info(`Scene changed to ${targetScene.name}.`);
+                } else {
+                    ui.notifications.warn("Scene Not Found.");
+                }
+                            }
+        },  
+        {
+            label: "Back To Landing",
+            type: ButtonType.onClick,
+            contexts: [ObjectType.Empty],
+            condition: (action) => {
+                const sceneNameOrId = SCM.getMenu().settings.landingScene;
+                if (!sceneNameOrId || sceneNameOrId.trim() === "") {
+                    return false;
+                }
+
+                const targetScene = game.scenes.get(sceneNameOrId) ?? game.scenes.getName(sceneNameOrId);
+
+                return canvas.scene.id !== targetScene?.id;
+            },
+            callback: (e) => {            
+
+                const sceneNameOrId = SCM.getMenu().settings.landingScene;
+                const targetScene = game.scenes.get(sceneNameOrId) 
+                                 ?? game.scenes.getName(sceneNameOrId);
+
+                if (targetScene) {
+                    targetScene.view();
+                    ui.notifications.info(`Scene changed to ${targetScene.name}.`);
+                } else {
+                    ui.notifications.warn("Scene Not Found.");
+                }
+                            }
+        },        
     ]
 }
